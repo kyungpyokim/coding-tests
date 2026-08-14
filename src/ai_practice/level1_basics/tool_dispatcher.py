@@ -51,7 +51,8 @@ class ToolDispatcher:
                 output=output,
                 status="success",
             )
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
+            # Catch arbitrary user-defined tool execution errors to prevent process crash
             return ToolResult(
                 call_id=tool_call.call_id,
                 tool_name=tool_call.name,
@@ -65,7 +66,7 @@ class ToolDispatcher:
         sig = inspect.signature(func)
         try:
             hints = get_type_hints(func)
-        except Exception:
+        except (TypeError, NameError, AttributeError):
             hints = {}
 
         properties: dict[str, Any] = {}
