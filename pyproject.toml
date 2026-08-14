@@ -49,7 +49,8 @@ select = [
     "TCH",  # flake8-type-checking
 ]
 ignore = [
-    "E501", # line length handled by formatter
+    "E501",  # line length handled by formatter
+    "UP047", # allow standard TypeVar for IDE / type-checker compatibility
 ]
 
 [tool.ruff.lint.isort]

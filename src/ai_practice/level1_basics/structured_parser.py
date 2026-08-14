@@ -1,7 +1,10 @@
 import json
 import re
+from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
+
+T = TypeVar("T", bound=BaseModel)
 
 
 class ParsingError(Exception):
@@ -27,7 +30,7 @@ def extract_json_string(text: str) -> str:
     raise ParsingError("No valid JSON found in response.")
 
 
-def parse_to_model[T: BaseModel](text: str, model_cls: type[T]) -> T:
+def parse_to_model(text: str, model_cls: type[T]) -> T:
     """Extract and validate JSON into a Pydantic model."""
     json_str = extract_json_string(text)
     try:
