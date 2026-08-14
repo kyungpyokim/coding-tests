@@ -11,6 +11,7 @@
 | **uv** | 초고속 패키지 관리 & 가상환경 | `uv sync`, `uv run python` |
 | **ruff** | Linter & Formatter | `uv run ruff check .`, `uv run ruff format .` |
 | **pytest** | 테스트 러너 & 비동기/모킹 지원 | `uv run pytest`, `uv run pytest -k "test_name"` |
+| **pytest-watcher** | 파일 저장 시 자동 테스트 재실행 (Watch 모드) | `./scripts/test_watch.sh` 또는 `uv run pytest-watcher .` |
 | **pytest-cov**| 코드 커버리지 리포트 | `uv run pytest --cov=ai_practice` |
 | **langgraph** | AI 에이전트 상태 그래프 오케스트레이션 | `src/ai_practice/level3_graphs`, `level4_agents` |
 
@@ -23,12 +24,20 @@
 uv sync
 ```
 
-### 2. 전체 테스트 및 커버리지 확인
+### 2. TDD 자동 테스트 (Watch 모드) 🔥
+코드나 테스트를 수정하고 저장하면 자동으로 테스트가 즉시 재실행됩니다:
+```bash
+./scripts/test_watch.sh
+# 또는
+uv run pytest-watcher .
+```
+
+### 3. 전체 테스트 및 커버리지 1회 확인
 ```bash
 uv run pytest
 ```
 
-### 3. 코드 린트 & 포맷팅 점검
+### 4. 코드 린트 & 포맷팅 점검
 ```bash
 uv run ruff check .
 uv run ruff format .

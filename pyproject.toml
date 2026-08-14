@@ -23,6 +23,7 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=5.0.0",
     "pytest-mock>=3.14.0",
+    "pytest-watcher>=0.6.3",
     "ruff>=0.5.0",
 ]
 
@@ -91,3 +92,11 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
+
+[tool.pytest_watcher]
+now = true
+delay = 0.2
+runner = "pytest"
+patterns = ["*.py"]
+ignore_patterns = [".venv/*", ".git/*", ".pytest_cache/*", ".ruff_cache/*"]
+
