@@ -111,31 +111,71 @@ uv run ruff format .
 
 ---
 
+## 🐍 파이썬 고급 문법 & Pythonic 기능 마스터 TDD 실습 (Chapter 1 ~ 8)
+
+파이썬만의 고유한 언어적 특성과 고급 기능들을 TDD 방식으로 직접 코드를 채워넣으며 마스터할 수 있는 8개 챕터 16개 핵심 실습 코스입니다.
+
+### 🚀 파이썬 실습 실행 방법
+```bash
+# 파이썬 마스터리 전체 테스트 실행
+uv run pytest tests/test_python_mastery/
+
+# 특정 챕터 집중 실습 (예: Chapter 1)
+./scripts/test_watch.sh tests/test_python_mastery/test_ch1_data_model.py
+```
+
+### 📚 파이썬 마스터리 챕터 구성
+- **Chapter 1: Python Data Model & Protocols** (`src/python_mastery/chapter1_data_model/`)
+  - `custom_vector.py`: `__len__`, `__getitem__`, `__iter__`, 연산자 오버로딩, `__hash__`, `__eq__` 불변 시퀀스.
+  - `dynamic_record.py`: `__getattr__`, `__setattr__`, `__getitem__` 기반 Dot & Dict 하이브리드 레코드.
+- **Chapter 2: Advanced Decorators & Closures** (`src/python_mastery/chapter2_decorators/`)
+  - `advanced_decorators.py`: 매개변수화 재시도(@retry), 클래스 기반 RateLimiter, TTL LRU 캐시.
+  - `single_dispatch.py`: `@singledispatch` 다형성 직렬화기 및 `@singledispatchmethod` 파이프라인.
+- **Chapter 3: Descriptors & Metaprogramming** (`src/python_mastery/chapter3_descriptors/`)
+  - `field_validators.py`: `__set_name__`, `__get__`, `__set__` 데이터 검증 디스크립터.
+  - `plugin_registry.py`: `__init_subclass__` 자동 등록 아키텍처 & Metaclass 클래스 검증기.
+- **Chapter 4: Generators, Iterators & Coroutines** (`src/python_mastery/chapter4_generators/`)
+  - `custom_iterators.py`: `__iter__`, `__next__` 기반 O(1) SlidingWindow 및 ChunkedStream.
+  - `stream_pipeline.py`: `yield from` 트리 평탄화 및 `.send()`, `.throw()` 양방향 코루틴 파이프라인.
+- **Chapter 5: Context Managers & Resource Lifecycle** (`src/python_mastery/chapter5_context_managers/`)
+  - `atomic_transaction.py`: 원자적 상태 롤백/커밋 및 예외 억제 컨텍스트 매니저.
+  - `resource_pool.py`: `@contextmanager` 및 `contextlib.ExitStack` 동적 다중 리소스 관리.
+- **Chapter 6: Structural Typing & Async Pipelines** (`src/python_mastery/chapter6_async_typing/`)
+  - `structural_typing.py`: `typing.Protocol` 구조적 서브타이핑, `@overload`, `Generic[T]`.
+  - `async_pipeline.py`: 비동기 CM/이터레이터, `asyncio.TaskGroup` & `Semaphore` 워커 풀.
+- **Chapter 7: Memory Internals & Zero-Copy** (`src/python_mastery/chapter7_memory_performance/`)
+  - `slots_and_weakref.py`: `__slots__` 인스턴스 메모리 절약 & `weakref` 순환 참조 누수 방지 캐시.
+  - `zerocopy_buffer.py`: `memoryview`와 `bytearray`를 활용한 패킷 제로카피 슬라이싱 파서.
+- **Chapter 8: AST Inspection & Modern Exception Architecture** (`src/python_mastery/chapter8_ast_exceptions/`)
+  - `ast_security_scanner.py`: `ast.NodeVisitor` 정적 위험 코드 탐지기 & `inspect.signature` 검증.
+  - `exception_groups.py`: `raise ... from ...` 체이닝 및 Python 3.11+ `ExceptionGroup` 집계.
+
+---
+
 ## 📁 디렉토리 구조
 
 ```text
-coding-skills/
+coding-tests/
 ├── pyproject.toml              # uv 의존성 및 ruff/pytest/pytest-watcher 설정
 ├── README.md                   # 실습 가이드
-├── correct-answer/             # Level 1 ~ 12 정답 코드 모음
+├── correct-answer/             # AI Level 1~12 및 Python Mastery Chapter 1~8 정답 코드
+│   ├── python_mastery/         # 파이썬 마스터리 레퍼런스 정답
+│   └── level1_basics/ ~ level12/
 ├── scripts/
 │   └── test_watch.sh           # TDD 실시간 Watch 테스트 스크립트
 ├── src/
-│   └── ai_practice/
-│       ├── core/               # 공통 데이터 모델 (ToolCall, ToolResult, LLMMessage)
-│       ├── level1_basics/      # Level 1 실습 템플릿
-│       ├── level2_state/       # Level 2 실습 템플릿
-│       ├── level3_graphs/      # Level 3 실습 템플릿
-│       ├── level4_agents/      # Level 4 실습 템플릿
-│       ├── level5_multi_agent/ # Level 5 실습 템플릿
-│       ├── level6_rag/         # Level 6 실습 템플릿
-│       ├── level7_caching/     # Level 7 실습 템플릿
-│       ├── level8_planner/     # Level 8 실습 템플릿
-│       ├── level9_streaming/   # Level 9 실습 템플릿
-│       ├── level10_guardrails/ # Level 10 실습 템플릿
-│       ├── level11_evaluator_optimizer/ # Level 11 실습 템플릿
-│       └── level12_distributed_state/   # Level 12 실습 템플릿
+│   ├── ai_practice/            # AI & LangGraph 12단계 실습 모듈
+│   └── python_mastery/         # 🐍 파이썬 고급 문법 8개 챕터 실습 모듈
+│       ├── chapter1_data_model/
+│       ├── chapter2_decorators/
+│       ├── chapter3_descriptors/
+│       ├── chapter4_generators/
+│       ├── chapter5_context_managers/
+│       ├── chapter6_async_typing/
+│       ├── chapter7_memory_performance/
+│       └── chapter8_ast_exceptions/
 └── tests/
     ├── conftest.py             # Mock LLM, Fixture 모음
-    ├── test_level1/ ~ test_level12/ # 각 레벨별 단위 테스트 스위트
+    ├── test_python_mastery/    # 🐍 파이썬 고급 문법 테스트 스위트 (60개 테스트)
+    └── test_level1/ ~ test_level12/ # AI 실습 단위 테스트 스위트
 ```
