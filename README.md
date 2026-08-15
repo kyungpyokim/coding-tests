@@ -1,6 +1,6 @@
 # AI & LangGraph TDD Playground 🧪🤖
 
-현대적인 Python AI 엔지니어링 생태계(`uv`, `ruff`, `pytest`, `langchain 1.0+`, `langgraph`, `pydantic v2`)를 기반으로, **TDD(테스트 주도 개발)** 방식으로 AI 에이전트와 워크플로우를 구현하며 코딩 감각을 회복할 수 있는 실습 프로젝트입니다.
+현대적인 Python AI 엔지니어링 생태계(`uv`, `ruff`, `pytest`, `langchain 1.0+`, `langgraph`, `pydantic v2`)를 기반으로, **TDD(테스트 주도 개발)** 방식으로 AI 에이전트와 워크플로우를 구현하며 코딩 감각을 회복할 수 있는 12단계 마스터 실습 프로젝트입니다.
 
 ---
 
@@ -31,11 +31,11 @@ uv sync
 ```bash
 ./scripts/test_watch.sh
 
-# 특정 테스트 폴더만 집중 Watch 하려면:
+# 특정 레벨 테스트만 집중 Watch 하려면:
 ./scripts/test_watch.sh tests/test_level2/
 ```
 
-### 3. 전체 테스트 및 커버리지 1회 실행
+### 3. 전체 테스트 1회 실행
 ```bash
 uv run pytest
 ```
@@ -69,46 +69,45 @@ uv run ruff format .
         └────────────────────────────────────────┘
 ```
 
-> 💡 **Deterministic TDD**: 모든 테스트는 유료 외부 LLM API 호출 없이 `tests/conftest.py`의 `fake_llm` 및 가짜 도구를 통해 **100% 빠르고 결정론적(deterministic)** 으로 실행되므로, 네트워크 비용이나 지연 없이 안전하게 TDD 사이클을 반복할 수 있습니다.
+> 💡 **Deterministic TDD**: 모든 테스트는 유료 외부 LLM API 호출 없이 가짜 도구 및 Mock LLM을 통해 **100% 빠르고 결정론적(deterministic)** 으로 실행되므로, 네트워크 비용이나 지연 없이 안전하게 TDD 사이클을 반복할 수 있습니다.
 
 ---
 
-## 📚 단계별 TDD AI 코딩 실습 로드맵
+## 📚 단계별 TDD AI 코딩 실습 로드맵 (Level 1 ~ 12)
 
-### ✅ Level 1: Basics (구현 완료 & 12/12 테스트 통과 💯)
-- **과제 1: `StructuredParser`** ([test_structured_parser.py](file:///Users/kimkyungpyo/Workspaces/playground/coding-skills/tests/test_level1/test_structured_parser.py))
-  - 마크다운 코드 블록(````json ... ````) 및 일반 텍스트에서 안전하게 JSON을 추출하여 Pydantic 모델로 파싱.
-  - JSON 문법 오류(`Malformed JSON`), 필수 필드 누락(`ValidationError`) 발생 시 명시적인 `ParsingError` 발생.
-- **과제 2: `ToolDispatcher`** ([test_tool_dispatcher.py](file:///Users/kimkyungpyo/Workspaces/playground/coding-skills/tests/test_level1/test_tool_dispatcher.py))
-  - 일반 Python 함수를 등록받아 OpenAI/LangChain 호환 JSON Schema 자동 추출.
-  - LLM의 도구 호출(`ToolCall`)을 안전하게 파싱하여 실행하고 구조화된 `ToolResult` 반환.
+### 📍 Phase 1: 기초 & 데이터 파이프라인
+- **Level 1: Basics & Schema Engine** (`src/ai_practice/level1_basics/`)
+  - `StructuredParser`: 마크다운 코드블록/텍스트에서 JSON 추출 및 Pydantic v2 안전 검증.
+  - `ToolDispatcher`: 함수 $\rightarrow$ OpenAI 호환 JSON Schema 자동 추출 및 안전 실행.
+- **Level 2: State Compression & Resilience** (`src/ai_practice/level2_state/`)
+  - `HistoryTrimmer`: `SystemMessage` 보존 기반 토큰 버짓 슬라이딩 윈도우 트리밍.
+  - `RetryPolicy`: 특정 예외 발생 시 지수 백오프(Exponential Backoff) 재시도 데코레이터.
+- **Level 3: Graph Foundations & Reducers** (`src/ai_practice/level3_graphs/`)
+  - `BasicGraph`: LangGraph `StateGraph`, `START`/`END` 엣지, `add_messages` 리듀서.
 
----
+### 📍 Phase 2: 자율 에이전트 & 다중 협업
+- **Level 4: Autonomous ReAct & Human-in-the-Loop** (`src/ai_practice/level4_agents/`)
+  - `ReActAgent`: 도구 실행 루프, `MemorySaver` 세션 영속화, `interrupt` 사용자 승인 워크플로우.
+- **Level 5: Multi-Agent Systems & Supervisor** (`src/ai_practice/level5_multi_agent/`)
+  - `Supervisor`: 감독관 LLM이 전문 서브 에이전트(리서처, 코더)로 작업을 동적 위임 및 취합.
+- **Level 6: RAG Engine & Hybrid Retrieval** (`src/ai_practice/level6_rag/`)
+  - `HybridRAG`: 재귀적 청킹, 인메모리 벡터 저장소, Dense + Sparse(BM25) RRF 순위 융합.
 
-### 🎯 Level 2: AI State & Robustness (다음 실습 과제)
-- **실습 디렉토리**: `src/ai_practice/level2_state/` & `tests/test_level2/`
-- **도전 과제**:
-  1. **Sliding Window History**: 대화 토큰/메시지 한도 초과 시 오래된 메시지를 안전하게 자르고 요약본을 보존하는 리듀서.
-  2. **Retry with Exponential Backoff**: LLM API 호출 중 `RateLimitError` / 타임아웃 발생 시 지수 백오프로 재시도하는 데코레이터.
-  3. **Semantic / Memory Cache**: 동일하거나 유사한 프롬프트 입력 시 이전 결과를 즉시 반환하는 캐시 계층.
+### 📍 Phase 3: 비용 절감 & 지능형 계획
+- **Level 7: Semantic Caching & Token Optimization** (`src/ai_practice/level7_caching/`)
+  - `SemanticCache`: 임베딩 코사인 유사도 기반 LLM 응답 캐시 및 TTL 만료 정책.
+- **Level 8: Plan-and-Solve / Hierarchical Task Decomposition** (`src/ai_practice/level8_planner/`)
+  - `PlanAndExecute`: 목표 단계 분해(Planner) $\rightarrow$ 순차 실행 $\rightarrow$ 진행도 기반 재계획(Replanner).
+- **Level 9: Real-time Streaming & Event Architecture** (`src/ai_practice/level9_streaming/`)
+  - `StreamParser`: 토큰 스트리밍 처리, 분할된 툴 콜 청크 조립, 이벤트 파서.
 
----
-
-### 🎯 Level 3: LangGraph Workflows
-- **실습 디렉토리**: `src/ai_practice/level3_graphs/` & `tests/test_level3/`
-- **도전 과제**:
-  1. **StateGraph 기본**: State TypedDict/Pydantic 정의, 노드 간 상태 불변성 및 Reducer 동작 검증.
-  2. **Conditional Routing**: LLM 분류 결과에 따라 서로 다른 처리 노드로 분기하는 조건부 엣지(Conditional Edge) 테스트.
-  3. **Evaluator-Optimizer Loop**: 초안 생성(Generator) -> 평가(Evaluator) -> 재작성(Optimizer) 자가 교정 피드백 루프 및 최대 반복 탈출 TDD.
-
----
-
-### 🎯 Level 4: Autonomous Agents & Human-in-the-Loop
-- **실습 디렉토리**: `src/ai_practice/level4_agents/` & `tests/test_level4/`
-- **도전 과제**:
-  1. **Tool-calling ReAct Agent**: ToolDispatcher와 LangGraph를 결합한 자율 도구 실행 에이전트.
-  2. **MemorySaver Checkpointer**: 대화 스레드 ID(`thread_id`)별 세션 상태 영속화 및 시간 여행(Time-travel) 복원 테스트.
-  3. **Human-in-the-Loop Interruption**: 민감한 작업(예: 송금, 데이터 삭제) 전 실행을 일시 중단하고 사용자 승인/거절을 받는 인터럽트 흐름 검증.
+### 📍 Phase 4: 엔터프라이즈 보안 & 자가 치유
+- **Level 10: AI Guardrails & Injection Defense** (`src/ai_practice/level10_guardrails/`)
+  - `Guardrails`: 개인정보(PII) 마스킹, 프롬프트 인젝션 탐지 및 차단 노드.
+- **Level 11: Self-Healing Evaluator-Optimizer** (`src/ai_practice/level11_evaluator_optimizer/`)
+  - `SelfHealingCode`: Generator $\rightarrow$ Evaluator(AST/실행 검증) $\rightarrow$ 피드백 자가 교정 루프.
+- **Level 12: Distributed State & Time-Travel Debugging** (`src/ai_practice/level12_distributed_state/`)
+  - `TimeTravel`: 상태 스냅샷 히스토리 추적, 과거 시점 롤백 및 상태 분기(Forking).
 
 ---
 
@@ -117,22 +116,26 @@ uv run ruff format .
 ```text
 coding-skills/
 ├── pyproject.toml              # uv 의존성 및 ruff/pytest/pytest-watcher 설정
-├── .python-version             # Python 3.12+
-├── .env.example                # 환경 변수 템플릿
 ├── README.md                   # 실습 가이드
+├── correct-answer/             # Level 1 ~ 12 정답 코드 모음
 ├── scripts/
-│   └── test_watch.sh           # TDD 실시간 Watch 테스트 실행 스크립트
+│   └── test_watch.sh           # TDD 실시간 Watch 테스트 스크립트
 ├── src/
 │   └── ai_practice/
-│       ├── core/               # Pydantic 기반 공통 데이터 모델 (ToolCall, ToolResult 등)
-│       ├── level1_basics/      # StructuredParser, ToolDispatcher (완료)
-│       ├── level2_state/       # State Reducer, Retry, Token Trimmer (실습 예정)
-│       ├── level3_graphs/      # LangGraph Workflows, Conditional Router (실습 예정)
-│       └── level4_agents/      # ReAct Agent, Human-in-the-loop (실습 예정)
+│       ├── core/               # 공통 데이터 모델 (ToolCall, ToolResult, LLMMessage)
+│       ├── level1_basics/      # Level 1 실습 템플릿
+│       ├── level2_state/       # Level 2 실습 템플릿
+│       ├── level3_graphs/      # Level 3 실습 템플릿
+│       ├── level4_agents/      # Level 4 실습 템플릿
+│       ├── level5_multi_agent/ # Level 5 실습 템플릿
+│       ├── level6_rag/         # Level 6 실습 템플릿
+│       ├── level7_caching/     # Level 7 실습 템플릿
+│       ├── level8_planner/     # Level 8 실습 템플릿
+│       ├── level9_streaming/   # Level 9 실습 템플릿
+│       ├── level10_guardrails/ # Level 10 실습 템플릿
+│       ├── level11_evaluator_optimizer/ # Level 11 실습 템플릿
+│       └── level12_distributed_state/   # Level 12 실습 템플릿
 └── tests/
     ├── conftest.py             # Mock LLM, Fixture 모음
-    ├── test_level1/            # Level 1 단위 테스트 (12개 테스트 통과)
-    ├── test_level2/            # Level 2 테스트 스위트
-    ├── test_level3/            # Level 3 테스트 스위트
-    └── test_level4/            # Level 4 테스트 스위트
+    ├── test_level1/ ~ test_level12/ # 각 레벨별 단위 테스트 스위트
 ```
