@@ -37,14 +37,13 @@ class TestTrimMessages:
             AIMessage(content="Recent answer 3"),
         ]
         # Set max_tokens to only fit SystemMessage + the latest 2 messages
-        result = trim_messages(messages, max_tokens=30, preserve_system=True)
+        result = trim_messages(messages, max_tokens=17, preserve_system=True)
 
+        assert len(result) == 3
         assert isinstance(result[0], SystemMessage)
         assert result[0].content == "You are a helpful AI assistant."
-        # Latest messages should be preserved
-        assert result[-1].content == "Recent answer 3"
-        assert result[-2].content == "Recent question 3"
-        assert len(result) < len(messages)
+        assert result[1].content == "Recent question 3"
+        assert result[2].content == "Recent answer 3"
 
     def test_empty_messages_returns_empty_list(self):
         assert trim_messages([], max_tokens=50) == []
