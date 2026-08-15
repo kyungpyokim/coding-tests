@@ -24,8 +24,8 @@ def extract_json_string(text: str) -> str:
         else:
             json_string = json.loads(text)
             return json.dumps(json_string)
-    except json.JSONDecodeError:
-        raise ParsingError("No valid JSON found")  # noqa: B904
+    except json.JSONDecodeError as err:
+        raise ParsingError("No valid JSON found") from err
 
 
 def parse_to_model(text: str, model_cls: type[T]) -> T:
@@ -35,7 +35,7 @@ def parse_to_model(text: str, model_cls: type[T]) -> T:
     try:
         json_string = json.loads(extract_json_string(text))
         return model_cls.model_validate(json_string)
-    except json.JSONDecodeError:
-        raise ParsingError("Malformed JSON")  # noqa: B904
-    except ValidationError:
-        raise ParsingError("Validation failed")  # noqa: B904
+    except json.JSONDecodeError as err:
+        raise ParsingError("Malformed JSON") from err
+    except ValidationError as err:
+        raise ParsingError("Validation failed") from err
