@@ -5,7 +5,8 @@ from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import BaseTool
 from langgraph.graph.message import add_messages
-from langgraph.graph.state import CompiledStateGraph
+from langgraph.graph.state import CompiledStateGraph, StateGraph
+from langgraph.prebuilt import ToolNode, tools_condition
 from typing_extensions import TypedDict
 
 
@@ -37,5 +38,24 @@ def create_react_agent_with_toolnode(
     6. Compilation:
        - Compile with checkpointer and interrupt_before (if interrupt_before_tools is True).
     """
+
     # TODO: ToolNode와 tools_condition을 활용하여 StateGraph를 구성하고 컴파일하세요.
-    raise NotImplementedError
+    graph = StateGraph(AgentState)
+
+    def call_model(state: AgentState) -> AgentState:
+        return {"messages": model.invoke(state["messages"])}
+
+    graph.add_node("call_model", call_model)
+    graph.add_node("tools", ToolNode(tools))
+
+    graph.set_entry_point("call_model")
+    
+    graph.add_conditional_edges('call_model', tools_condition)
+    graph.add_edge('tools', 'call_model')
+
+    interrupt_before = ['tools'] if interrupt_before_tools else None
+
+    return graph.compile(
+      checkpointer=checkpointer,
+      interrupt_before=interrupt_before
+    )
