@@ -57,5 +57,31 @@ def wrap_node_with_middleware(
        - If any middleware returns a recovery dict, treat it as the final result and return it.
        - If no middleware handles the error, re-raise the exception.
     """
+
     # TODO: 위 workflow에 따라 미들웨어 파이프라인을 실행하는 래퍼 함수를 구현하세요.
-    raise NotImplementedError
+    def wrapped(state: dict[str, Any]) -> dict[str, Any]:
+        cur_state = dict(state)
+
+        for mw in middlewares:
+            res = mw.before_node(node_name, cur_state)
+            if isinstance(res, dict):
+                cur_state.update(res)
+
+        try:
+            result = node_func(cur_state)
+        except Exception as e:
+            for mw in middlewares:
+                recovery = mw.on_node_error(node_name, cur_state, e)
+                if isinstance(recovery, dict):
+                    return recovery
+            raise e
+
+        cur_result = dict(result)
+        for mw in middlewares:
+            res = mw.after_node(node_name, cur_state, cur_result)
+            if isinstance(res, dict):
+                cur_result.update(res)
+
+        return cur_result
+
+    return wrapped
