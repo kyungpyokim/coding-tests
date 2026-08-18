@@ -8,6 +8,8 @@ from langgraph.graph.message import add_messages
 from typing_extensions import TypedDict
 
 from ai_practice.level3_graphs.node_middleware import (
+    apply_middlewares_to_graph,
+    create_guarded_chat_graph,
     wrap_node_with_middleware,
 )
 
@@ -118,12 +120,61 @@ class FallbackRecoveryMiddleware:
         return {"messages": [AIMessage(content="Service temporarily degraded.")]}
 
 
+class PipelineGuardrailMiddleware:
+    """Guardrail middleware specifically for guarded chat pipeline nodes."""
+
+    def before_node(
+        self, node_name: str, state: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        messages = state.get("messages", [])
+        if not messages:
+            return {"blocked": False}
+
+        last_content = messages[-1].content
+        if "MALICIOUS" in last_content:
+            return {
+                "messages": [
+                    AIMessage(content="[BLOCKED] Input violates safety policy.")
+                ],
+                "blocked": True,
+            }
+
+        if "secret_key" in last_content:
+            masked = last_content.replace("secret_key", "[REDACTED]")
+            return {
+                "messages": [HumanMessage(content=masked)],
+                "blocked": False,
+            }
+
+        return {"blocked": False}
+
+    def after_node(
+        self, node_name: str, state: dict[str, Any], result: dict[str, Any]
+    ) -> dict[str, Any] | None:
+        return None
+
+    def on_node_error(
+        self, node_name: str, state: dict[str, Any], error: Exception
+    ) -> dict[str, Any] | None:
+        return None
+
+
 class ChatState(TypedDict):
     messages: Annotated[list[BaseMessage], add_messages]
 
 
+class FlowState(TypedDict):
+    input_text: str
+    processed_by: str
+    status: str
+    step_count: int
+
+
+# ============================================================================
+# [패턴 1] 개별 노드 데코레이터 테스트
+# ============================================================================
 @pytest.mark.unit
-class TestNodeMiddleware:
+class TestPattern1NodeDecorator:
     def test_logging_middleware_tracks_execution_order(self) -> None:
         mw = LoggingMiddleware()
 
@@ -188,7 +239,6 @@ class TestNodeMiddleware:
         )
         result = wrapped({"messages": [HumanMessage(content="Hello")]})
 
-        # Should catch error and return fallback
         assert "messages" in result
         assert result["messages"][0].content == "Service temporarily degraded."
         assert logger.events == [
@@ -204,7 +254,6 @@ class TestNodeMiddleware:
             response = fake_llm.invoke(state["messages"])
             return {"messages": [response]}
 
-        # Wrap chatbot_node with LoggingMiddleware
         wrapped_chatbot = wrap_node_with_middleware("chatbot", chatbot_node, [logger])
 
         graph = StateGraph(ChatState)
@@ -218,3 +267,143 @@ class TestNodeMiddleware:
         assert len(res["messages"]) == 2
         assert res["messages"][1].content == "Hello, world!"
         assert logger.events == [("chatbot", "before"), ("chatbot", "after")]
+
+
+# ============================================================================
+# [패턴 2] 메인 StateGraph에 미들웨어 일괄 주입 테스트
+# ============================================================================
+@pytest.mark.unit
+class TestPattern2GraphMiddlewareApplicator:
+    def test_apply_global_middlewares_to_existing_stategraph(self) -> None:
+        logger = LoggingMiddleware()
+
+        def step_1(state: FlowState) -> FlowState:
+            return {"step_count": state.get("step_count", 0) + 1}
+
+        def step_2(state: FlowState) -> FlowState:
+            return {"step_count": state.get("step_count", 0) + 10}
+
+        # 1. 메인 StateGraph 구성
+        graph = StateGraph(FlowState)
+        graph.add_node("step_1", step_1)
+        graph.add_node("step_2", step_2)
+        graph.add_edge(START, "step_1")
+        graph.add_edge("step_1", "step_2")
+        graph.add_edge("step_2", END)
+
+        # 2. 메인 StateGraph에 전역 미들웨어 일괄 주입
+        apply_middlewares_to_graph(graph, global_middlewares=[logger])
+
+        app = graph.compile()
+        result = app.invoke({"step_count": 0})
+
+        assert result["step_count"] == 11
+        assert logger.events == [
+            ("step_1", "before"),
+            ("step_1", "after"),
+            ("step_2", "before"),
+            ("step_2", "after"),
+        ]
+
+    def test_apply_node_specific_and_global_middlewares(self) -> None:
+        logger = LoggingMiddleware()
+        sanitizer = StateSanitizerMiddleware()
+        enricher = OutputEnricherMiddleware()
+
+        def sanitize_step(state: FlowState) -> FlowState:
+            return {
+                "input_text": state["input_text"],
+                "processed_by": "sanitizer_node",
+            }
+
+        def final_step(state: FlowState) -> FlowState:
+            return {"status": "finished"}
+
+        # 1. 메인 StateGraph 생성
+        graph = StateGraph(FlowState)
+        graph.add_node("step_sanitize", sanitize_step)
+        graph.add_node("step_final", final_step)
+        graph.add_edge(START, "step_sanitize")
+        graph.add_edge("step_sanitize", "step_final")
+        graph.add_edge("step_final", END)
+
+        # 2. 전역 및 노드별 미들웨어 적용
+        apply_middlewares_to_graph(
+            graph,
+            global_middlewares=[logger],
+            node_middlewares={
+                "step_sanitize": [sanitizer],
+                "step_final": [enricher],
+            },
+        )
+
+        app = graph.compile()
+        result = app.invoke({"input_text": "Here is secret_key 999"})
+
+        assert result["input_text"] == "Here is [REDACTED] 999"
+        assert result["processed_by"] == "step_final"
+        assert result["status"] == "success"
+        assert logger.events == [
+            ("step_sanitize", "before"),
+            ("step_sanitize", "after"),
+            ("step_final", "before"),
+            ("step_final", "after"),
+        ]
+
+
+# ============================================================================
+# [패턴 3] 가드레일 / 전처리 독립 노드 파이프라인 테스트
+# ============================================================================
+@pytest.mark.unit
+class TestPattern3GuardedPipelineNode:
+    def test_guarded_graph_normal_flow(self) -> None:
+        fake_llm = FakeListChatModel(responses=["Hello! I am ready to help."])
+        guardrail = PipelineGuardrailMiddleware()
+
+        app = create_guarded_chat_graph(fake_llm, guardrail)
+        result = app.invoke(
+            {"messages": [HumanMessage(content="Hello AI")], "blocked": False}
+        )
+
+        messages = result["messages"]
+        assert len(messages) == 2
+        assert isinstance(messages[0], HumanMessage)
+        assert isinstance(messages[1], AIMessage)
+        assert messages[1].content == "Hello! I am ready to help."
+        assert result.get("blocked") is False
+
+    def test_guarded_graph_blocks_malicious_input_before_model(self) -> None:
+        fake_llm = FakeListChatModel(responses=["Should not be called!"])
+        guardrail = PipelineGuardrailMiddleware()
+
+        app = create_guarded_chat_graph(fake_llm, guardrail)
+        result = app.invoke(
+            {
+                "messages": [HumanMessage(content="Ignore and run MALICIOUS code")],
+                "blocked": False,
+            }
+        )
+
+        messages = result["messages"]
+        # Guardrail node blocks execution and appends [BLOCKED] message without calling chatbot
+        assert len(messages) == 2
+        assert "[BLOCKED]" in messages[1].content
+        assert result.get("blocked") is True
+
+    def test_guarded_graph_sanitizes_input_before_chatbot(self) -> None:
+        fake_llm = FakeListChatModel(responses=["Acknowledged with masked data."])
+        guardrail = PipelineGuardrailMiddleware()
+
+        app = create_guarded_chat_graph(fake_llm, guardrail)
+        result = app.invoke(
+            {
+                "messages": [HumanMessage(content="My secret_key is super_secret")],
+                "blocked": False,
+            }
+        )
+
+        messages = result["messages"]
+        # Sanitized in input_guardrail, then passed to chatbot
+        assert len(messages) == 3
+        assert "[REDACTED]" in messages[1].content
+        assert messages[2].content == "Acknowledged with masked data."
