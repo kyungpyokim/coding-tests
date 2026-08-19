@@ -3,9 +3,8 @@ from typing import Annotated, Any
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
-from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.graph.state import CompiledStateGraph
+from langgraph.graph.state import END, START, CompiledStateGraph, StateGraph
 from typing_extensions import TypedDict
 
 
@@ -38,7 +37,24 @@ def create_agent_node(
 
     def agent_node(state: HandoffState) -> dict[str, Any]:
         # TODO: 구현하세요
-        pass
+        res = model.invoke(state["messages"])
+        raw_text = str(res.content).strip()
+
+        next = "FINISH"
+        for target in valid_targets:
+            if (
+                f"transfer_to_{target.lower()}" in raw_text.lower()
+                or target.lower() in raw_text.lower()
+            ):
+                next = target
+                break
+
+        ai_message = AIMessage(content=raw_text, name=agent_name)
+        return {
+            "messages": [ai_message],
+            "current_agent": agent_name,
+            "next_agent": next,
+        }
 
     return agent_node
 
@@ -59,4 +75,17 @@ def create_handoff_system(
     4. 컴파일하여 반환합니다.
     """
     # TODO: StateGraph(HandoffState)를 구성하고 노드와 조건부 엣지를 연결하세요.
-    pass
+    builder = StateGraph(HandoffState)
+    for name, option in agents_config.items():
+        builder.add_node(name, create_agent_node(model, name, option))
+
+        def route(state: HandoffState) -> str:
+            if state["next_agent"] == "FINISH" or state["next_agent"] is None:
+                return END
+            return state["next_agent"]
+
+        builder.add_conditional_edges(name, route)
+
+    builder.add_edge(START, entry_agent)
+
+    return builder.compile()
