@@ -39,10 +39,12 @@ class TestHandoffMultiAgent:
     def test_handoff_system_multi_turn_transfer(self):
         # 1. triage -> transfers to technical
         # 2. technical -> resolves problem and FINISH
-        model = MockLLM([
-            "Let me transfer to technical support for server error.",
-            "Technical support: Server restarted. All set! FINISH",
-        ])
+        model = MockLLM(
+            [
+                "Let me transfer to technical support for server error.",
+                "Technical support: Server restarted. All set! FINISH",
+            ]
+        )
 
         agents_config = {
             "triage": ["technical", "billing"],
@@ -51,11 +53,13 @@ class TestHandoffMultiAgent:
         }
 
         system = create_handoff_system(model, agents_config, entry_agent="triage")
-        result = system.invoke({
-            "messages": [HumanMessage(content="Server 500 error occurred.")],
-            "current_agent": "",
-            "next_agent": "",
-        })
+        result = system.invoke(
+            {
+                "messages": [HumanMessage(content="Server 500 error occurred.")],
+                "current_agent": "",
+                "next_agent": "",
+            }
+        )
 
         messages = result["messages"]
         # Human -> triage -> technical
