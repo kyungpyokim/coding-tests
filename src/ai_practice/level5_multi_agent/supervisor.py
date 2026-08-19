@@ -1,12 +1,11 @@
-from langgraph.constants import END
-from langgraph.graph.state import StateGraph
 from collections.abc import Callable
 from typing import Annotated, Any
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import BaseMessage
+from langgraph.constants import END
 from langgraph.graph.message import add_messages
-from langgraph.graph.state import CompiledStateGraph
+from langgraph.graph.state import CompiledStateGraph, StateGraph
 from typing_extensions import TypedDict
 
 
@@ -25,18 +24,19 @@ def create_supervisor_chain(
     The supervisor returns one of the worker names or 'FINISH'.
     """
     # TODO: model을 호출하여 응답 문자열에서 다음 실행할 worker_name 또는 'FINISH'를 반환하는 함수를 만드세요.
-    valid_name = set(worker_names) | {'FINISH'}
-    
+    valid_name = set(worker_names) | {"FINISH"}
+
     def route(state: dict[str, Any]) -> str:
-        res = model.invoke(state['messages'])
+        res = model.invoke(state["messages"])
         raw_text = str(res.content).strip()
 
         for name in valid_name:
             if name.lower() in raw_text.lower():
                 return name
-        return 'FINISH'
+        return "FINISH"
 
     return route
+
 
 def create_multi_agent_system(
     model: BaseChatModel,
@@ -61,25 +61,25 @@ def create_multi_agent_system(
 
     def supervisor(state: SupervisorState) -> dict[str, str]:
         next = route_fn(state)
-        return {'next': next}
+        return {"next": next}
 
     def route(state: SupervisorState) -> str:
-        if state['next'] == 'FINISH' or state['next'] not in workers:
+        if state["next"] == "FINISH" or state["next"] not in workers:
             return END
 
-        return state['next']
+        return state["next"]
 
     builder.add_node("supervisor", supervisor)
 
     for name, worker_fn in workers.items():
         builder.add_node(name, worker_fn)
-        builder.add_edge(name, 'supervisor')
+        builder.add_edge(name, "supervisor")
 
-    builder.set_entry_point('supervisor')
+    builder.set_entry_point("supervisor")
 
     routing_map = {name: name for name in worker_names}
     routing_map[END] = END
 
-    builder.add_conditional_edges('supervisor', route, routing_map)
+    builder.add_conditional_edges("supervisor", route, routing_map)
 
     return builder.compile()
