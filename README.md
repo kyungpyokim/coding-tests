@@ -90,8 +90,9 @@ uv run ruff format .
   - `ReActAgent`: 도구 실행 루프, `MemorySaver` 세션 영속화, `interrupt` 사용자 승인 워크플로우.
 - **Level 5: Multi-Agent Systems & Supervisor** (`src/ai_practice/level5_multi_agent/`)
   - `Supervisor`: 감독관 LLM이 전문 서브 에이전트(리서처, 코더)로 작업을 동적 위임 및 취합.
-- **Level 6: RAG Engine & Hybrid Retrieval** (`src/ai_practice/level6_rag/`)
+- **Level 6: RAG Engine & Hybrid / Graph Retrieval** (`src/ai_practice/level6_rag/`)
   - `HybridRAG`: 재귀적 청킹, 인메모리 벡터 저장소, Dense + Sparse(BM25) RRF 순위 융합.
+  - `GraphRAG`: 지식 그래프(Knowledge Graph), BFS 기반 $k$-hop 서브그래프 탐색, 트리플 포맷팅 및 구조화된 컨텍스트 검색.
 
 ### 📍 Phase 3: 비용 절감 & 지능형 계획
 - **Level 7: Semantic Caching & Token Optimization** (`src/ai_practice/level7_caching/`)
