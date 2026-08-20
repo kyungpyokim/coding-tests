@@ -24,7 +24,11 @@ def create_worker_node(
     """Create a worker node that analyzes a topic from its specific domain perspective."""
 
     def worker_node(state: ParallelCollaborationState) -> dict[str, Any]:
-        prompt = f"Analyze the following topic from a {domain} perspective: {state['topic']}"
+        topic = state.get("topic", "").strip()
+        if not topic:
+            return {"findings": {domain: f"No topic provided for {domain}."}}
+
+        prompt = f"Analyze the following topic from a {domain} perspective: {topic}"
         response = model.invoke([HumanMessage(content=prompt)])
         return {
             "findings": {domain: str(response.content).strip()},
@@ -39,10 +43,18 @@ def create_aggregator_node(
     """Create an aggregator node that synthesizes all domain findings into a final report."""
 
     def aggregator_node(state: ParallelCollaborationState) -> dict[str, Any]:
+        findings = state.get("findings", {})
+        if not findings or not any(str(v).strip() for v in findings.values()):
+            return {"final_report": "No findings available to aggregate."}
+
         findings_text = "\n".join(
-            f"- [{domain}]: {result}" for domain, result in state["findings"].items()
+            f"- [{domain}]: {result}" for domain, result in findings.items()
         )
-        prompt = f"Synthesize these domain findings for '{state['topic']}' into a final report:\n{findings_text}"
+        topic = state.get("topic", "").strip()
+        prompt = (
+            f"Synthesize these domain findings for '{topic}' into a final report:\n"
+            f"{findings_text}"
+        )
         response = model.invoke([HumanMessage(content=prompt)])
         return {
             "final_report": str(response.content).strip(),
@@ -58,11 +70,17 @@ def create_parallel_collaboration_system(
     """Build a parallel collaboration graph (Fan-Out -> Fan-In).
 
     Workflow:
-    1. START fans out to all domain worker nodes in parallel.
-    2. Each worker node performs analysis and updates state['findings'].
-    3. All worker nodes fan in to the 'aggregator' node.
-    4. Aggregator synthesizes the findings into state['final_report'] and routes to END.
+    1. Validate domains list (non-empty and unique).
+    2. START fans out to all domain worker nodes in parallel.
+    3. Each worker node performs analysis and updates state['findings'].
+    4. All worker nodes fan in to the 'aggregator' node.
+    5. Aggregator synthesizes the findings into state['final_report'] and routes to END.
     """
+    if not domains:
+        raise ValueError("domains must not be empty.")
+    if len(domains) != len(set(domains)):
+        raise ValueError("domains must be unique.")
+
     builder = StateGraph(ParallelCollaborationState)
 
     for domain in domains:
