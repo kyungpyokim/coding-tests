@@ -1,6 +1,6 @@
-import math
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 
@@ -34,12 +34,13 @@ def recursive_character_chunk(
 
 
 def _cosine_similarity(v1: list[float], v2: list[float]) -> float:
-    dot = sum(a * b for a, b in zip(v1, v2, strict=False))
-    norm_a = math.sqrt(sum(a * a for a in v1))
-    norm_b = math.sqrt(sum(b * b for b in v2))
+    a = np.array(v1, dtype=float)
+    b = np.array(v2, dtype=float)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
-    return dot / (norm_a * norm_b)
+    return float(np.dot(a, b) / (norm_a * norm_b))
 
 
 class InMemoryVectorStore:

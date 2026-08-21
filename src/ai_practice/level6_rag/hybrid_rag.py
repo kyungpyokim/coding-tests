@@ -16,7 +16,21 @@ def recursive_character_chunk(
 ) -> list[str]:
     """Split text into chunks of maximum `chunk_size` characters with `overlap`."""
     # TODO: 긴 텍스트를 chunk_size 크기로 자르고, 이전 청크와 overlap만큼 겹치도록 분할하여 반환하세요.
-    raise NotImplementedError
+    if not text:
+        return []
+
+    chunks: list[str] = []
+    start = 0
+    step = chunk_size - overlap
+
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+        chunks.append(text[start:end])
+        if end == len(text):
+            break
+        start += step
+
+    return chunks
 
 
 class InMemoryVectorStore:

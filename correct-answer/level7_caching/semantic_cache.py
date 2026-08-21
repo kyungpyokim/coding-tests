@@ -1,18 +1,19 @@
-import math
 import time
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 
 def cosine_similarity(vec_a: list[float], vec_b: list[float]) -> float:
     """Calculate cosine similarity between two float vectors."""
-    dot = sum(a * b for a, b in zip(vec_a, vec_b, strict=False))
-    norm_a = math.sqrt(sum(a * a for a in vec_a))
-    norm_b = math.sqrt(sum(b * b for b in vec_b))
+    a = np.array(vec_a, dtype=float)
+    b = np.array(vec_b, dtype=float)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
-    return dot / (norm_a * norm_b)
+    return float(np.dot(a, b) / (norm_a * norm_b))
 
 
 class CacheEntry(BaseModel):
