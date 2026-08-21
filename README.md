@@ -151,12 +151,13 @@ uv run pytest tests/test_python_mastery/
   - `ast_security_scanner.py`: `ast.NodeVisitor` 정적 위험 코드 탐지기 & `inspect.signature` 검증.
   - `exception_groups.py`: `raise ... from ...` 체이닝 및 Python 3.11+ `ExceptionGroup` 집계.
 
----
-
 ## 📁 디렉토리 구조
 
 ```text
 coding-tests/
+├── docs/                       # 핵심 개념 및 이론 가이드 문서
+│   ├── ontology_knowledge_graph_rag_guide.md # 온톨로지, 지식 그래프, Graph RAG 가이드
+│   └── tool_call_explanation.md # Tool Calling 메커니즘 완전 정복 가이드
 ├── pyproject.toml              # uv 의존성 및 ruff/pytest/pytest-watcher 설정
 ├── README.md                   # 실습 가이드
 ├── correct-answer/             # AI Level 1~12 및 Python Mastery Chapter 1~8 정답 코드
@@ -180,3 +181,4 @@ coding-tests/
     ├── test_python_mastery/    # 🐍 파이썬 고급 문법 테스트 스위트 (60개 테스트)
     └── test_level1/ ~ test_level12/ # AI 실습 단위 테스트 스위트
 ```
+
